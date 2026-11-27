@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000">
+<meta name="author" content="Alice Ramalho">
+<title>Tiago Tattoo · Wi-Fi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@200;800&family=Kaushan+Script&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+  :root { --tx: 0; --ty: 0; }
+  html, body { height: 100%; background: #000; color: #f2f2f2; font-family: Inter, system-ui, sans-serif; overflow: hidden; overscroll-behavior: none; }
+  body { display: grid; grid-template-rows: auto 1fr auto; height: 100dvh; padding: calc(18px + env(safe-area-inset-top)) 20px calc(14px + env(safe-area-inset-bottom));
+         background: radial-gradient(60% 45% at calc(50% + var(--tx) * 20%) calc(42% + var(--ty) * 15%), #262626, #000 70%); }
+
+  /* textura de grão */
+  body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .07; z-index: 9;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* palavra gigante no fundo, mexe em paralaxe com o celular */
+  .bg { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; overflow: hidden; }
+  .bg span { font: 800 68vh/0.8 "Big Shoulders Display", sans-serif; writing-mode: vertical-rl; color: transparent;
+             -webkit-text-stroke: 1px rgba(255,255,255,.07); transform: translate(calc(var(--tx) * -24px), calc(var(--ty) * -18px)); }
+
+  .eyebrow { position: relative; display: flex; justify-content: center; align-items: center; gap: 8px;
+             font-size: 11px; letter-spacing: .32em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .eyebrow::before, .eyebrow::after { content: ""; width: 28px; height: 1px; background: rgba(255,255,255,.25); }
+
+  /* ---------- o cartão 3D ---------- */
+  .scene { position: relative; display: grid; place-items: center; perspective: 1100px; touch-action: none; cursor: grab; }
+  .intro { transform-style: preserve-3d; animation: drop 1.5s cubic-bezier(.2,.9,.25,1) both; }
+  @keyframes drop { from { transform: translateY(45vh) rotateX(65deg) scale(.7) } }
+  .card { --w: min(70vw, 290px, 33dvh); --s: 50; position: relative; width: var(--w); aspect-ratio: 5 / 8; transform-style: preserve-3d; }
+  .card::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -14%; height: 10%; border-radius: 50%;
+                 background: rgba(0,0,0,.8); filter: blur(18px); transform: rotateX(90deg); }
+  .edge, .face { position: absolute; inset: 0; border-radius: calc(var(--w) * .06); }
+  .edge { background: #2b2b2b; border: 1px solid #3a3a3a; }
+  .face { backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; container-type: inline-size;
+          background: linear-gradient(160deg, #161616, #050505 60%); border: 1px solid rgba(255,255,255,.14);
+          display: flex; flex-direction: column; align-items: center; padding: 7cqw; }
+  .front { transform: translateZ(4px); }
+  .back  { transform: rotateY(180deg) translateZ(4px); }
+  /* moldura fina e reflexo de luz que corre conforme o cartão gira */
+  .face::before { content: ""; position: absolute; inset: 3.5cqw; border: 1px solid rgba(255,255,255,.1); border-radius: 4cqw; pointer-events: none; }
+  .face::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+                 background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.16) 47%, rgba(255,255,255,.04) 52%, transparent 62%);
+                 background-size: 300% 100%; background-position: calc(var(--s) * 1%) 0; }
+
+  .meta { width: 100%; display: flex; justify-content: space-between; font-size: 3.2cqw; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); padding: 1cqw 2cqw 0; }
+  .front img { width: 84cqw; margin-top: 6cqw; mix-blend-mode: screen; pointer-events: none; -webkit-user-drag: none; }
+  .mark { font: 800 15.5cqw/1 "Big Shoulders Display", sans-serif; letter-spacing: .02em; margin-top: 3cqw; }
+  .mark span { font-weight: 200; }
+  .tagline { font: 7cqw "Kaushan Script", cursive; margin-top: 1cqw; }
+  .status { margin-top: auto; display: inline-flex; align-items: center; gap: 2cqw; padding: 2.6cqw 4.5cqw; border-radius: 99px;
+            font-size: 3.4cqw; letter-spacing: .14em; text-transform: uppercase; border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.75); }
+  .status i { width: 2cqw; height: 2cqw; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; animation: blink 1.4s infinite; }
+  .unlocked .status i { background: #34c759; box-shadow: 0 0 8px #34c759; }
+  @keyframes blink { 50% { opacity: .3 } }
+
+  .back { justify-content: center; gap: 3.5cqw; text-align: center; }
+  .back h2 { font: 800 10cqw/1 "Big Shoulders Display", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+  .back h2 span { font-weight: 200; }
+  .field { width: 100%; padding: 3cqw 4cqw; border-radius: 4cqw; background: rgba(255,255,255,.06); text-align: left; }
+  .field small { display: block; font-size: 3cqw; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); }
+  .field b { display: block; font-weight: 600; font-size: 5.6cqw; margin-top: .6cqw; }
+  .field b.pass { font: 800 11cqw/1 "Big Shoulders Display", sans-serif; letter-spacing: .04em; }
+  #copy { width: 100%; padding: 3.6cqw; border: 0; border-radius: 99px; background: #fff; color: #000; font: 600 4.4cqw Inter, sans-serif; }
+  #qr { width: 32cqw; padding: 2cqw; background: #fff; border-radius: 3cqw; }
+  #qr svg { display: block; width: 100%; height: auto; }
+  .back p { font-size: 3.2cqw; color: rgba(255,255,255,.45); }
+
+  /* ---------- rodapé ---------- */
+  .cta { position: relative; text-align: center; }
+  .steps { display: flex; justify-content: center; gap: 6px; list-style: none; padding: 0; margin-bottom: 14px; }
+  .steps li { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.35); padding: 6px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,.1); transition: .4s; }
+  .steps li.on { color: #000; background: #fff; border-color: #fff; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(100%, 360px); margin: 0 auto; padding: 17px; border-radius: 99px;
+         background: #fff; color: #000; font: 600 16px Inter, sans-serif; text-decoration: none; transition: transform .15s; }
+  .btn:active { transform: scale(.96); }
+  .unlocked .btn { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.25); }
+  .hint { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 10px; min-height: 1.2em; }
+  .credit { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.28); margin-top: 12px; }
+
+  @media (prefers-reduced-motion: reduce) { .intro { animation: none; } }
+</style>
+</head>
+<body>
+<div class="bg"><span>TATTOO</span></div>
+
+<header class="eyebrow">Wi-Fi para clientes</header>
+
+<div class="scene" id="scene">
+  <div class="intro">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="meta"><span>Wi-Fi Pass</span><span>Nº 0001</span></div>
+        <img src="logo.jpeg" alt="">
+        <div class="mark">TIAGO<span>TATTOO</span></div>
+        <div class="tagline">Eternize seu estilo!</div>
+        <div class="status"><i></i><span id="status">Siga pra liberar</span></div>
+      </div>
+      <div class="face back">
+        <h2>Wi-Fi <span>liberado</span></h2>
+        <div class="field"><small>Rede</small><b id="ssid"></b></div>
+        <div class="field"><small>Senha</small><b class="pass" id="pass"></b></div>
+        <button id="copy">Copiar senha</button>
+        <div id="qr"></div>
+        <p>Outro celular? Aponte a câmera.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="cta">
+  <ol class="steps"><li class="on" id="s1">1 · Siga</li><li id="s2">2 · Volte</li><li id="s3">3 · Conecte</li></ol>
+  <a id="ig" class="btn" target="_blank" rel="noopener">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+    <span>Seguir @tiago.art.tattoo</span>
+  </a>
+  <p class="hint" id="hint">Gire o cartão com o dedo</p>
+  <p class="credit">desenvolvido por Alice Ramalho</p>
+</section>
+
+<script>
+  const IG_USER = 'tiago.art.tattoo';
+  const SSID = 'Tiago Tattoo - Clientes';
+  const PASS = 'BoraTatuar';
+
+  const $ = id => document.getElementById(id);
+  const buzz = p => navigator.vibrate?.(p); // Android vibra; iPhone ignora
+  $('ig').href = 'https://instagram.com/' + IG_USER;
+  $('ssid').textContent = SSID;
+  $('pass').textContent = PASS;
+
+  // espessura do cartão: camadas empilhadas no eixo Z
+  for (let z = -3; z <= 3; z++) {
+    const e = document.createElement('div');
+    e.className = 'edge'; e.style.transform = `translateZ(${z}px)`;
+    $('card').prepend(e);
+  }
+
+  // ---------- física do cartão: mola + arrasto + giroscópio ----------
+  let rot = -540, vel = 0, base = 0, drag = null, tiltX = 0, tiltY = 0, unlocked = false;
+  const card = $('card'), root = document.documentElement.style;
+
+  (function loop(t) {
+    const target = base + (drag ? drag.off : 0);
+    if (drag) { rot += (target - rot) * .5; vel = 0; }
+    else { vel += (target - rot) * .06; vel *= .82; rot += vel; }
+    const ry = rot + tiltX * 22, rx = tiltY * -16 + Math.sin(t / 900) * 3;
+    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateY(${Math.sin(t / 700) * 4}px)`;
+    card.style.setProperty('--s', 50 + ((ry % 180) + 180) % 180 / 1.8 - 50 + tiltY * 10);
+    root.setProperty('--tx', tiltX); root.setProperty('--ty', tiltY);
+    requestAnimationFrame(loop);
+  })(0);
+
+  const flip = dir => { base += 180 * dir; buzz(20); };
+
+  $('scene').addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    askGyro();
+    drag = { x: e.clientX, off: 0, moved: false };
+    $('scene').setPointerCapture(e.pointerId);
+  });
+  $('scene').addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 6) drag.moved = true;
+    // bloqueado: resiste e nunca mostra o verso
+    drag.off = unlocked ? dx * .6 : 75 * Math.tanh(dx * .6 / 75);
+  });
+  $('scene').addEventListener('pointerup', () => {
+    if (!drag) return;
+    const { off, moved } = drag;
+    drag = null;
+    if (unlocked && (!moved || Math.abs(off) > 50)) flip(off < 0 ? -1 : 1);
+    else if (!unlocked && !moved) { vel += 14; buzz([15, 40, 15]); $('hint').textContent = 'Siga o Insta primeiro 👇'; }
+  });
+  $('scene').addEventListener('pointercancel', () => drag = null);
+
+  // giroscópio: o cartão acompanha a inclinação do celular (no iPhone precisa de permissão num toque)
+  addEventListener('deviceorientation', e => {
+    if (e.gamma == null) return;
+    tiltX = Math.max(-1, Math.min(1, e.gamma / 30));
+    tiltY = Math.max(-1, Math.min(1, (e.beta - 50) / 30));
+  });
+  let asked = false;
+  function askGyro() {
+    if (asked) return; asked = true;
+    window.DeviceOrientationEvent?.requestPermission?.().catch(() => {});
+  }
+  addEventListener('pointerdown', askGyro, { once: true });
+
+  // ---------- liberação ----------
+  // ponytail: não dá pra verificar se a pessoa seguiu de verdade; libera ao voltar do Insta
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    localStorage.setItem('tt-wifi', '1');
+    const esc = s => s.replace(/([\\;,:"])/g, '\\$1');
+    const qr = qrcode(0, 'M');
+    qr.addData(`WIFI:T:WPA;S:${esc(SSID)};P:${esc(PASS)};;`);
+    qr.make();
+    $('qr').innerHTML = qr.createSvgTag({ margin: 0 });
+    document.body.classList.add('unlocked');
+    $('status').textContent = 'Liberado';
+    $('s2').classList.add('on'); $('s3').classList.add('on');
+    $('ig').querySelector('span').textContent = 'Abrir Instagram';
+    $('hint').textContent = 'Toque no cartão pra virar';
+    setTimeout(() => { flip(1); buzz([30, 50, 30, 50, 120]); }, 500);
+  }
+  if (localStorage.getItem('tt-wifi')) setTimeout(unlock, 1300);
+
+  $('ig').addEventListener('click', () => {
+    askGyro();
+    buzz([50, 30, 50, 30, 50]);
+    $('s2').classList.add('on');
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && unlock());
+    setTimeout(unlock, 6000); // fallback se o navegador não disparar visibilitychange
+  });
+
+  $('copy').addEventListener('click', async e => {
+    await navigator.clipboard.writeText(PASS).catch(() => {});
+    buzz(40);
+    e.currentTarget.textContent = 'Copiada ✓ cole no Wi-Fi';
+  });
+</script>
+</body>
+</html>
