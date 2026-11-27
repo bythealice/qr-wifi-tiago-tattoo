@@ -60,7 +60,7 @@
   .unlocked .status i { background: #34c759; box-shadow: 0 0 8px #34c759; }
   @keyframes blink { 50% { opacity: .3 } }
 
-  .back { justify-content: center; gap: 3.5cqw; text-align: center; }
+  .back { justify-content: center; gap: 3cqw; text-align: center; }
   .back h2 { font: 800 10cqw/1 "Big Shoulders Display", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
   .back h2 span { font-weight: 200; }
   .field { width: 100%; padding: 3cqw 4cqw; border-radius: 4cqw; background: rgba(255,255,255,.06); text-align: left; }
@@ -68,8 +68,14 @@
   .field b { display: block; font-weight: 600; font-size: 5.6cqw; margin-top: .6cqw; }
   .field b.pass { font: 800 11cqw/1 "Big Shoulders Display", sans-serif; letter-spacing: .04em; }
   #copy { width: 100%; padding: 3.6cqw; border: 0; border-radius: 99px; background: #fff; color: #000; font: 600 4.4cqw Inter, sans-serif; }
-  #qr { width: 32cqw; padding: 2cqw; background: #fff; border-radius: 3cqw; }
-  #qr svg { display: block; width: 100%; height: auto; }
+  #qr { width: 46cqw; padding: 2.5cqw; background: #fff; border-radius: 3cqw; cursor: zoom-in; }
+  #qr svg, #bigqr svg { display: block; width: 100%; height: auto; }
+  #zoom { position: fixed; inset: 0; z-index: 30; display: grid; place-content: center; justify-items: center; gap: 20px; padding: 24px; text-align: center;
+          background: rgba(0,0,0,.92); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  #zoom.show { opacity: 1; pointer-events: auto; }
+  #bigqr { width: min(84vw, 60dvh); padding: 5%; background: #fff; border-radius: 24px; transform: scale(.85); transition: transform .4s cubic-bezier(.2,1.4,.3,1); }
+  #zoom.show #bigqr { transform: none; }
+  #zoom p { font-size: 13px; color: rgba(255,255,255,.6); }
   .back p { font-size: 3.2cqw; color: rgba(255,255,255,.45); }
 
   /* ---------- rodapé ---------- */
@@ -80,8 +86,20 @@
   .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(100%, 360px); margin: 0 auto; padding: 17px; border-radius: 99px;
          background: #fff; color: #000; font: 600 16px Inter, sans-serif; text-decoration: none; transition: transform .15s; }
   .btn:active { transform: scale(.96); }
-  .unlocked .btn { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.25); }
+  .revealed .btn { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.25); }
   .hint { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 10px; min-height: 1.2em; }
+  .revealed .hint { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #fff; padding: 8px 16px; border-radius: 99px;
+                    background: rgba(255,255,255,.08); animation: nudge 2s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: scale(1.06) } }
+
+  /* botão de segurar: enche conforme a pessoa mantém o dedo */
+  #hold { --p: 0; display: none; position: relative; overflow: hidden; width: min(100%, 360px); margin: 0 auto; padding: 17px; border: 0; border-radius: 99px;
+          background: #222; color: #fff; font: 600 16px Inter, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.25), 0 0 calc(var(--p) * 40px) rgba(255,255,255,calc(var(--p) * .5)); }
+  #hold::before { content: ""; position: absolute; inset: 0; background: #fff; transform-origin: left; transform: scaleX(var(--p)); }
+  #hold span { position: relative; mix-blend-mode: difference; }
+  .unlocked:not(.revealed) #hold { display: block; animation: nudge 1.6s ease-in-out infinite; }
+  .unlocked:not(.revealed) #ig { display: none; }
   .credit { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.28); margin-top: 12px; }
 
   @media (prefers-reduced-motion: reduce) { .intro { animation: none; } }
@@ -108,7 +126,7 @@
         <div class="field"><small>Senha</small><b class="pass" id="pass"></b></div>
         <button id="copy">Copiar senha</button>
         <div id="qr"></div>
-        <p>Outro celular? Aponte a câmera.</p>
+        <p>Outro celular? Toque no QR para ampliar.</p>
       </div>
     </div>
   </div>
@@ -120,9 +138,12 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
     <span>Seguir @tiago.art.tattoo</span>
   </a>
-  <p class="hint" id="hint">Gire o cartão com o dedo</p>
+  <button id="hold"><span>Segure para liberar o Wi-Fi</span></button>
+  <p class="hint" id="hint">Arraste o cartão para girar</p>
   <p class="credit">desenvolvido por Alice Ramalho</p>
 </section>
+
+<div id="zoom"><div id="bigqr"></div><p>Aponte a câmera do outro celular · toque para fechar</p></div>
 
 <script>
   const IG_USER = 'tiago.art.tattoo';
@@ -143,7 +164,7 @@
   }
 
   // ---------- física do cartão: mola + arrasto + giroscópio ----------
-  let rot = -540, vel = 0, base = 0, drag = null, tiltX = 0, tiltY = 0, unlocked = false;
+  let rot = -540, vel = 0, base = 0, drag = null, tiltX = 0, tiltY = 0, unlocked = false, revealed = false;
   const card = $('card'), root = document.documentElement.style;
 
   (function loop(t) {
@@ -160,7 +181,7 @@
   const flip = dir => { base += 180 * dir; buzz(20); };
 
   $('scene').addEventListener('pointerdown', e => {
-    if (e.target.closest('button')) return;
+    if (e.target.closest('button, #qr')) return;
     askGyro();
     drag = { x: e.clientX, off: 0, moved: false };
     $('scene').setPointerCapture(e.pointerId);
@@ -170,14 +191,14 @@
     const dx = e.clientX - drag.x;
     if (Math.abs(dx) > 6) drag.moved = true;
     // bloqueado: resiste e nunca mostra o verso
-    drag.off = unlocked ? dx * .6 : 75 * Math.tanh(dx * .6 / 75);
+    drag.off = revealed ? dx * .6 : 75 * Math.tanh(dx * .6 / 75);
   });
   $('scene').addEventListener('pointerup', () => {
     if (!drag) return;
     const { off, moved } = drag;
     drag = null;
-    if (unlocked && (!moved || Math.abs(off) > 50)) flip(off < 0 ? -1 : 1);
-    else if (!unlocked && !moved) { vel += 14; buzz([15, 40, 15]); $('hint').textContent = 'Siga o Insta primeiro 👇'; }
+    if (revealed && (!moved || Math.abs(off) > 50)) flip(off < 0 ? -1 : 1);
+    else if (!revealed && !moved) { vel += 14; buzz([15, 40, 15]); $('hint').textContent = unlocked ? 'Segure o botão abaixo 👇' : 'Siga o Insta primeiro 👇'; }
   });
   $('scene').addEventListener('pointercancel', () => drag = null);
 
@@ -204,14 +225,41 @@
     const qr = qrcode(0, 'M');
     qr.addData(`WIFI:T:WPA;S:${esc(SSID)};P:${esc(PASS)};;`);
     qr.make();
-    $('qr').innerHTML = qr.createSvgTag({ margin: 0 });
+    $('qr').innerHTML = $('bigqr').innerHTML = qr.createSvgTag({ margin: 0 });
     document.body.classList.add('unlocked');
     $('status').textContent = 'Liberado';
-    $('s2').classList.add('on'); $('s3').classList.add('on');
-    $('ig').querySelector('span').textContent = 'Abrir Instagram';
-    $('hint').textContent = 'Toque no cartão pra virar';
-    setTimeout(() => { flip(1); buzz([30, 50, 30, 50, 120]); }, 500);
+    $('s2').classList.add('on');
+    $('hint').textContent = 'Mantenha o dedo no botão até encher';
+    buzz([30, 50, 30]);
   }
+
+  function reveal() {
+    revealed = true;
+    document.body.classList.add('revealed');
+    $('s3').classList.add('on');
+    $('status').textContent = 'Toque para girar';
+    $('ig').querySelector('span').textContent = 'Abrir Instagram';
+    $('hint').innerHTML = '<span style="font-size:18px">↻</span> Toque no cartão para girar';
+    flip(1); buzz([30, 50, 30, 50, 150]);
+  }
+
+  // segurar o botão: enche em 1,2s com vibração crescente; soltou antes, esvazia
+  let held = 0, holding = false, last = 0;
+  $('hold').addEventListener('pointerdown', e => { holding = true; last = performance.now(); e.currentTarget.setPointerCapture(e.pointerId); tickHold(); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => $('hold').addEventListener(ev, () => holding = false));
+  $('hold').addEventListener('contextmenu', e => e.preventDefault());
+  function tickHold() {
+    const now = performance.now(), dt = now - last; last = now;
+    held = Math.max(0, Math.min(1, held + (holding ? dt / 1200 : -dt / 400)));
+    $('hold').style.setProperty('--p', held);
+    if (holding && Math.random() < held * .5) buzz(10);
+    if (held >= 1) return reveal();
+    if (held > 0 || holding) requestAnimationFrame(tickHold);
+  }
+
+  // QR em tela cheia pra escanear com outro celular
+  $('qr').addEventListener('click', () => $('zoom').classList.add('show'));
+  $('zoom').addEventListener('click', () => $('zoom').classList.remove('show'));
   if (localStorage.getItem('tt-wifi')) setTimeout(unlock, 1300);
 
   $('ig').addEventListener('click', () => {
